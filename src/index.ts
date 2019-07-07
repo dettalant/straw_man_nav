@@ -155,16 +155,14 @@ class NavManager {
    */
   isOtherElementsClick(e: MouseEvent, classNames: string[]): boolean {
 
-    // どれも対処しにくいエラーだけど実害が少ないやつなので、consoleに流すだけして放置
+    // どれも対処しにくいエラーだけど実害がないやつなので、そのままオーケー扱いとする
     // return時にはtrue、特に意味のない場所をクリックした扱いにしておく
     if (e.target === null) {
-      console.error("取得したMouseEventにTargetがなかった")
       return true;
     } else if (!(e.target instanceof Element)) {
-      console.error("取得したMouseEventTargetがElementを継承していないやつだった")
       return true;
     } else if (e.target.parentElement === null) {
-      console.error("取得したMouseEvent Targetに親要素がなかった");
+      // <html>か<body>をクリックした時の処理
       return true;
     }
 
@@ -182,7 +180,6 @@ class NavManager {
     }
 
     if (checkEl === null) {
-      console.error("MouseEventからHTMLElementを取得することができませんでした")
       return true;
     }
 
