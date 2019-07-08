@@ -1,3 +1,11 @@
+/*!
+ * @file straw_man_nav.js
+ * See {@link https://github.com/dettalant/straw_man_nav}
+ *
+ * @author dettalant
+ * @version v0.2.1
+ * @license MIT License
+ */
 (function () {
   'use strict';
 
