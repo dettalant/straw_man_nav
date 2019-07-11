@@ -1,9 +1,9 @@
 /*!
- * @file straw_man_nav.js
+ *   straw_man_nav.js
  * See {@link https://github.com/dettalant/straw_man_nav}
  *
  * @author dettalant
- * @version v0.2.1
+ * @version v0.2.2
  * @license MIT License
  */
 (function () {
@@ -24,7 +24,7 @@
   // 要素に付与してページに変化を起こすclass名
   STATE_OPENED = "is_opened", 
   // モーダル要素を表示させるclass名
-  STATE_VISIBLE = "is_visible";
+  STATE_VISIBLE = "is_visible", DEVICE_CLICK_EVENT_TYPE = (window.ontouchend === null) ? "touchend" : "click";
   var NavManagerError = function NavManagerError(message) {
       this.message = message;
       this.name = "NavManagerError";
@@ -200,7 +200,7 @@
       // NavManagerクラスの初期化
       var navManager = new NavManager();
       // 他要素をクリックした際の処理をイベント登録
-      document.addEventListener("click", function (e) {
+      document.addEventListener(DEVICE_CLICK_EVENT_TYPE, function (e) {
           var checkNames = [NAV_CLIP_NAME, NAV_CLIP_WRAPPER_NAME];
           if (navManager.isOtherElementsClick(e, checkNames)) {
               // ボタン以外をクリックした際の処理
@@ -212,17 +212,17 @@
       var navClipsLen = navManager.globalNavClips.length;
       var loop = function ( i ) {
           var clip = navManager.globalNavClips[i];
-          clip.addEventListener("click", function () {
+          clip.addEventListener(DEVICE_CLICK_EVENT_TYPE, function () {
               navManager.clickEventHandler(clip);
           }, false);
       };
 
       for (var i = 0; i < navClipsLen; i++) loop( i );
       // グローバルナビゲーション開閉ボタンをクリックした際の処理をイベント登録
-      navManager.globalNavOpener.addEventListener("click", function () {
+      navManager.globalNavOpener.addEventListener(DEVICE_CLICK_EVENT_TYPE, function () {
           navManager.openSlideNavMenu();
       }, false);
-      navManager.modalShadow.addEventListener("click", function () {
+      navManager.modalShadow.addEventListener(DEVICE_CLICK_EVENT_TYPE, function () {
           navManager.closeSlideNavMenu();
       }, false);
       // resize時にスマホ版表示グローバルナビゲーションを閉じる処理を、

@@ -13,7 +13,8 @@ const
   // 要素に付与してページに変化を起こすclass名
   STATE_OPENED = "is_opened",
   // モーダル要素を表示させるclass名
-  STATE_VISIBLE = "is_visible";
+  STATE_VISIBLE = "is_visible",
+  DEVICE_CLICK_EVENT_TYPE = (window.ontouchend === null) ? "touchend" : "click";
 
 class NavManagerError implements Error {
   public name = "NavManagerError";
@@ -153,7 +154,7 @@ class NavManager {
    * @param  classNames 判定するクラス名を入れたarray
    * @return その他要素がクリックされたのならtrue
    */
-  isOtherElementsClick(e: MouseEvent, classNames: string[]): boolean {
+  isOtherElementsClick(e: MouseEvent | TouchEvent, classNames: string[]): boolean {
 
     // どれも対処しにくいエラーだけど実害がないやつなので、そのままオーケー扱いとする
     // return時にはtrue、特に意味のない場所をクリックした扱いにしておく
@@ -212,7 +213,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const navManager = new NavManager();
 
   // 他要素をクリックした際の処理をイベント登録
-  document.addEventListener("click", function(e) {
+  document.addEventListener(DEVICE_CLICK_EVENT_TYPE, function(e) {
     const checkNames = [NAV_CLIP_NAME, NAV_CLIP_WRAPPER_NAME];
     if (navManager.isOtherElementsClick(e, checkNames)) {
       // ボタン以外をクリックした際の処理
@@ -225,17 +226,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const navClipsLen = navManager.globalNavClips.length;
   for (let i = 0; i < navClipsLen; i++) {
     let clip = navManager.globalNavClips[i]
-    clip.addEventListener("click", () => {
+    clip.addEventListener(DEVICE_CLICK_EVENT_TYPE, () => {
       navManager.clickEventHandler(clip);
     }, false);
   }
 
   // グローバルナビゲーション開閉ボタンをクリックした際の処理をイベント登録
-  navManager.globalNavOpener.addEventListener("click", () => {
+  navManager.globalNavOpener.addEventListener(DEVICE_CLICK_EVENT_TYPE, () => {
     navManager.openSlideNavMenu()
   }, false);
 
-  navManager.modalShadow.addEventListener("click", () => {
+  navManager.modalShadow.addEventListener(DEVICE_CLICK_EVENT_TYPE, () => {
     navManager.closeSlideNavMenu();
   }, false)
 
