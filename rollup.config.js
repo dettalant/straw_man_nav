@@ -10,7 +10,7 @@ const scriptArgs = {
 }
 
 const bannerComment = `/*!
- * @file ${scriptArgs.name}.js
+ *   ${scriptArgs.name}.js
  * See {@link ${scriptArgs.repoUrl}}
  *
  * @author dettalant
