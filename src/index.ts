@@ -162,27 +162,23 @@ class NavManager {
       return true;
     } else if (!(e.target instanceof Element)) {
       return true;
-    } else if (e.target.parentElement === null) {
-      // <html>か<body>をクリックした時の処理
-      return true;
     }
 
-    const tagName = e.target.tagName.toUpperCase();
-    let checkEl;
-    if (tagName === "USE") {
-      // <use>要素の場合は親の親要素を取得
-      checkEl = e.target.parentElement.parentElement;
-    } else if (tagName === "SVG") {
-      // <svg>要素の場合は親要素を取得
-      checkEl = e.target.parentElement;
-    } else {
-      // その他要素の場合はそのまま取得
-      checkEl = e.target;
+    // Jqueryのclosest的な挙動の関数。引数にとったtagNameと一致する、一番近い親要素を返す。
+    // もしdocumentまで遡ってしまったらdocumentを返す。
+    const closestElement = (el: Element, name: string): Element => {
+      const elTagName = el.tagName.toUpperCase();
+      const tagName = name.toUpperCase();
+      if (elTagName === tagName) {
+        return el;
+      } else if (elTagName !== tagName && el.parentElement !== null) {
+        return closestElement(el.parentElement, tagName);
+      }
+      return el;
     }
 
-    if (checkEl === null) {
-      return true;
-    }
+    // グローバルナビゲーション項目の親要素は両方ともdivなのでそれを鑑みて取得
+    const checkEl = closestElement(e.target, "div");
 
     const checkElementClassName = checkEl.className;
     const classNamesLen = classNames.length;
