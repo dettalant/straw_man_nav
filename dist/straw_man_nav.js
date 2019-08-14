@@ -3,7 +3,7 @@
  * See {@link https://github.com/dettalant/straw_man_nav}
  *
  * @author dettalant
- * @version v0.2.3
+ * @version v0.2.4
  * @license MIT License
  */
 (function () {
@@ -24,7 +24,7 @@
   // 要素に付与してページに変化を起こすclass名
   STATE_OPENED = "is_opened", 
   // モーダル要素を表示させるclass名
-  STATE_VISIBLE = "is_visible", DEVICE_CLICK_EVENT_TYPE = (window.ontouchend === null) ? "touchend" : "click";
+  STATE_VISIBLE = "is_visible", IS_EXIST_TOUCH_EVENT = window.ontouchstart === null, DEVICE_CLICK_EVENT_TYPE = (window.ontouchend === null) ? "touchend" : "click";
   var NavManagerError = function NavManagerError(message) {
       this.message = message;
       this.name = "NavManagerError";
@@ -48,6 +48,10 @@
       return InitializeError;
   }(NavManagerError));
   var NavManager = function NavManager() {
+      this.states = {
+          isSwiping: false,
+          scrollY: 0,
+      };
       var globalNavContainer = document.getElementById(NAV_CONTAINER_ID);
       if (globalNavContainer === null) {
           throw new InitializeError("#" + NAV_CONTAINER_ID + "の取得ができませんでした");
@@ -71,11 +75,16 @@
       this.modalShadow = this.createModalShadowElement();
       // インスタンス生成時にdocument.bodyへと追加
       document.body.appendChild(this.modalShadow);
+      if (IS_EXIST_TOUCH_EVENT) {
+          this.appendSwipeValidationEvent();
+      }
   };
   /**
    * スマホ版スライドグローバルナビゲーションを開く
    */
   NavManager.prototype.openSlideNavMenu = function openSlideNavMenu () {
+      // モーダルウィンドウ展開時はbodyのスクロールを止める
+      this.pinBodyScroll();
       this.globalNavContainer.classList.add(STATE_OPENED);
       this.modalShadow.classList.add(STATE_VISIBLE);
   };
@@ -83,12 +92,31 @@
    * スマホ版スライドグローバルナビゲーションを閉じる
    */
   NavManager.prototype.closeSlideNavMenu = function closeSlideNavMenu () {
+      // 一時的に止めていたbodyスクロールを再開させる
+      this.unpinBodyScroll();
       // 速度的な効果があるかは知らないけど、
       // とりあえずクラス名にSTATE_OPENEDが入っているかどうかの判定をしておく
       if (this.globalNavContainer.className.indexOf(STATE_OPENED) !== -1) {
           this.globalNavContainer.classList.remove(STATE_OPENED);
       }
       this.modalShadow.classList.remove(STATE_VISIBLE);
+  };
+  /**
+   * document.bodyのスクロールを止める
+   * またその際のスクロール位置を取得しておく
+   */
+  NavManager.prototype.pinBodyScroll = function pinBodyScroll () {
+      this.states.scrollY = window.scrollY;
+      document.body.style.position = "fixed";
+      document.body.style.top = "-" + this.states.scrollY + "px";
+  };
+  /**
+   * document.bodyのスクロールを再開させる
+   */
+  NavManager.prototype.unpinBodyScroll = function unpinBodyScroll () {
+      document.body.style.position = "";
+      document.body.style.top = "";
+      window.scrollTo(0, this.states.scrollY);
   };
   /**
    * 単一のドロップダウンメニューを開く
@@ -190,11 +218,36 @@
       modalEl.classList.add("modal_shadow");
       return modalEl;
   };
+  /**
+   * swipe時にtouchendをキャンセルする処理のために、
+   * swipeを行っているかを判定するイベントを追加する
+   */
+  NavManager.prototype.appendSwipeValidationEvent = function appendSwipeValidationEvent () {
+          var this$1 = this;
+
+      // スマホ判定を一応行っておく
+      if (IS_EXIST_TOUCH_EVENT) {
+          // touchend指定時の、スワイプ判定追加記述
+          // NOTE: 若干やっつけ気味
+          window.addEventListener("touchstart", function () {
+              this$1.states.isSwiping = false;
+          });
+          window.addEventListener("touchmove", function () {
+              if (!this$1.states.isSwiping) {
+                  // 無意味な上書きは一応避ける
+                  this$1.states.isSwiping = true;
+              }
+          });
+      }
+  };
   document.addEventListener("DOMContentLoaded", function () {
       // NavManagerクラスの初期化
       var navManager = new NavManager();
       // 他要素をクリックした際の処理をイベント登録
       document.addEventListener(DEVICE_CLICK_EVENT_TYPE, function (e) {
+          if (navManager.states.isSwiping) {
+              return;
+          }
           var checkNames = [NAV_CLIP_NAME, NAV_CLIP_WRAPPER_NAME];
           if (navManager.isOtherElementsClick(e, checkNames)) {
               // ボタン以外をクリックした際の処理
@@ -207,6 +260,8 @@
       var loop = function ( i ) {
           var clip = navManager.globalNavClips[i];
           clip.addEventListener(DEVICE_CLICK_EVENT_TYPE, function () {
+              if (navManager.states.isSwiping)
+                  { return; }
               navManager.clickEventHandler(clip);
           }, false);
       };
@@ -214,9 +269,13 @@
       for (var i = 0; i < navClipsLen; i++) loop( i );
       // グローバルナビゲーション開閉ボタンをクリックした際の処理をイベント登録
       navManager.globalNavOpener.addEventListener(DEVICE_CLICK_EVENT_TYPE, function () {
+          if (navManager.states.isSwiping)
+              { return; }
           navManager.openSlideNavMenu();
       }, false);
       navManager.modalShadow.addEventListener(DEVICE_CLICK_EVENT_TYPE, function () {
+          if (navManager.states.isSwiping)
+              { return; }
           navManager.closeSlideNavMenu();
       }, false);
       // resize時にスマホ版表示グローバルナビゲーションを閉じる処理を、
