@@ -128,7 +128,11 @@ class NavManager {
   unpinBodyScroll() {
     document.body.style.position = "";
     document.body.style.top = "";
-    window.scrollTo(0, this.states.scrollY);
+
+    if (this.states.scrollY !== 0) {
+      // scrollYが0の際はバグを防ぐため、またそうする意味もないのでスクロールはさせない
+      window.scrollTo(0, this.states.scrollY);
+    }
   }
 
   /**
@@ -311,16 +315,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // resize時にスマホ版表示グローバルナビゲーションを閉じる処理を、
   // 負荷軽減させつつ行う
-  let timeoutId: number = 0;
-  window.addEventListener("resize", () => {
-    if (timeoutId) {
-      return;
-    }
-
-    timeoutId = window.setTimeout(() => {
-      timeoutId = 0;
-      navManager.closeSlideNavMenu();
-      navManager.closeDropDownClipAll();
-    }, 200)
-  }, false)
+  //
+  // NOTE: スマホ版で致命的な問題が発生することが発覚したので一旦コメントアウト
+  //
+  // let timeoutId: number = 0;
+  // window.addEventListener("resize", () => {
+  //   if (timeoutId) {
+  //     return;
+  //   }
+  //
+  //   timeoutId = window.setTimeout(() => {
+  //     timeoutId = 0;
+  //     navManager.closeSlideNavMenu();
+  //     navManager.closeDropDownClipAll();
+  //   }, 200)
+  // }, false)
 })

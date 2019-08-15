@@ -3,7 +3,7 @@
  * See {@link https://github.com/dettalant/straw_man_nav}
  *
  * @author dettalant
- * @version v0.2.4
+ * @version v0.2.5
  * @license MIT License
  */
 (function () {
@@ -116,7 +116,10 @@
   NavManager.prototype.unpinBodyScroll = function unpinBodyScroll () {
       document.body.style.position = "";
       document.body.style.top = "";
-      window.scrollTo(0, this.states.scrollY);
+      if (this.states.scrollY !== 0) {
+          // scrollYが0の際はバグを防ぐため、またそうする意味もないのでスクロールはさせない
+          window.scrollTo(0, this.states.scrollY);
+      }
   };
   /**
    * 単一のドロップダウンメニューを開く
@@ -280,17 +283,21 @@
       }, false);
       // resize時にスマホ版表示グローバルナビゲーションを閉じる処理を、
       // 負荷軽減させつつ行う
-      var timeoutId = 0;
-      window.addEventListener("resize", function () {
-          if (timeoutId) {
-              return;
-          }
-          timeoutId = window.setTimeout(function () {
-              timeoutId = 0;
-              navManager.closeSlideNavMenu();
-              navManager.closeDropDownClipAll();
-          }, 200);
-      }, false);
+      //
+      // NOTE: スマホ版で致命的な問題が発生することが発覚したので一旦コメントアウト
+      //
+      // let timeoutId: number = 0;
+      // window.addEventListener("resize", () => {
+      //   if (timeoutId) {
+      //     return;
+      //   }
+      //
+      //   timeoutId = window.setTimeout(() => {
+      //     timeoutId = 0;
+      //     navManager.closeSlideNavMenu();
+      //     navManager.closeDropDownClipAll();
+      //   }, 200)
+      // }, false)
   });
 
 }());
