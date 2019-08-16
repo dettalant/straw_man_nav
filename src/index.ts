@@ -140,9 +140,29 @@ class NavManager {
    * @param  el ドロップダウンのボタン要素。 see NAV_CLIP_NAME
    */
   openDropDownClip(el: Element) {
+    // 一部スマホではel.scrollHeightで求めている値を取得できてないっぽいので
+    // 自前で値を足し合わせる
+    const calcScrollHeight = (el: HTMLElement): number => {
+      let result = 0;
+
+      const loopLen = el.children.length;
+      for (let i = 0; i < loopLen; i++) {
+        const childEl = el.children[i];
+        if (childEl instanceof HTMLElement) {
+          const scrollHeight = childEl.scrollHeight;
+          const offsetHeight = childEl.offsetHeight;
+
+          // scrollHeightとoffsetHeightのどちらか高い方を足し合わせる
+          result += (scrollHeight > offsetHeight) ? scrollHeight : offsetHeight;
+        }
+      }
+
+      return result;
+    }
+
     if (el instanceof HTMLElement) {
       // スマホ版グローバルナビゲーション表示のために、子要素の高さをdatasetに追加する
-      el.style.maxHeight = el.scrollHeight + "px";
+      el.style.maxHeight = calcScrollHeight(el) + "px";
     }
 
     el.classList.add(STATE_OPENED);

@@ -3,7 +3,7 @@
  * See {@link https://github.com/dettalant/straw_man_nav}
  *
  * @author dettalant
- * @version v0.2.5
+ * @version v0.2.6
  * @license MIT License
  */
 (function () {
@@ -126,9 +126,25 @@
    * @param  el ドロップダウンのボタン要素。 see NAV_CLIP_NAME
    */
   NavManager.prototype.openDropDownClip = function openDropDownClip (el) {
+      // 一部スマホではel.scrollHeightで求めている値を取得できてないっぽいので
+      // 自前で値を足し合わせる
+      var calcScrollHeight = function (el) {
+          var result = 0;
+          var loopLen = el.children.length;
+          for (var i = 0; i < loopLen; i++) {
+              var childEl = el.children[i];
+              if (childEl instanceof HTMLElement) {
+                  var scrollHeight = childEl.scrollHeight;
+                  var offsetHeight = childEl.offsetHeight;
+                  // scrollHeightとoffsetHeightのどちらか高い方を足し合わせる
+                  result += (scrollHeight > offsetHeight) ? scrollHeight : offsetHeight;
+              }
+          }
+          return result;
+      };
       if (el instanceof HTMLElement) {
           // スマホ版グローバルナビゲーション表示のために、子要素の高さをdatasetに追加する
-          el.style.maxHeight = el.scrollHeight + "px";
+          el.style.maxHeight = calcScrollHeight(el) + "px";
       }
       el.classList.add(STATE_OPENED);
   };
