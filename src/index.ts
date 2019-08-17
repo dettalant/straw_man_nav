@@ -1,3 +1,6 @@
+import { appendFixedButton } from "./append_button";
+import { IS_EXIST_TOUCH_EVENT, DEVICE_CLICK_EVENT_TYPE } from "./constants"
+
 // 決め打ちのid名やらclass名たち
 const
   // グローバルナビゲーションコンテナid名
@@ -13,9 +16,7 @@ const
   // 要素に付与してページに変化を起こすclass名
   STATE_OPENED = "is_opened",
   // モーダル要素を表示させるclass名
-  STATE_VISIBLE = "is_visible",
-  IS_EXIST_TOUCH_EVENT = window.ontouchstart === null,
-  DEVICE_CLICK_EVENT_TYPE = (window.ontouchend === null) ? "touchend" : "click";
+  STATE_VISIBLE = "is_visible";
 
 class NavManagerError implements Error {
   public name = "NavManagerError";
@@ -332,6 +333,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     navManager.closeSlideNavMenu();
   }, false)
+
+  // スマホ版での追従ボタンを追加
+  appendFixedButton(navManager.openSlideNavMenu.bind(navManager));
 
   // resize時にスマホ版表示グローバルナビゲーションを閉じる処理を、
   // 負荷軽減させつつ行う

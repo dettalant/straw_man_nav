@@ -3,11 +3,57 @@
  * See {@link https://github.com/dettalant/straw_man_nav}
  *
  * @author dettalant
- * @version v0.2.6
+ * @version v0.3.0
  * @license MIT License
  */
 (function () {
   'use strict';
+
+  var IS_EXIST_TOUCH_EVENT = window.ontouchstart === null;
+  var DEVICE_CLICK_EVENT_TYPE = (IS_EXIST_TOUCH_EVENT) ? "touchend" : "click";
+
+  var BUTTON_CLASSNAME = "fixed_global_nav_opener fixed_button pc_view_hidden";
+  var BUTTON_ID = "fixedGlobalNavOpener";
+  var BUTTON_TITLE = "メニューを開く";
+  /**
+   * 追従ボタンをbodyに追加する
+   * @param  callback クリック時に起こすコールバック関数を受け取る
+   */
+  var appendFixedButton = function (callback) {
+      var buttonEl = document.createElement("button");
+      buttonEl.type = "button";
+      buttonEl.className = BUTTON_CLASSNAME;
+      buttonEl.id = BUTTON_ID;
+      buttonEl.title = BUTTON_TITLE;
+      var svgIcon = createSvgIcon();
+      buttonEl.appendChild(svgIcon);
+      buttonEl.addEventListener(DEVICE_CLICK_EVENT_TYPE, function () { return callback(); });
+      document.body.appendChild(buttonEl);
+  };
+  /**
+   * ページトップへ戻るアイコンとなるSVG要素を生成して返す
+   * icon material: material.io baseline-arrow_upward
+   * @return 生成したSVG要素
+   */
+  var createSvgIcon = function () {
+      // XML namespace
+      var NAMESPACE = "http://www.w3.org/2000/svg";
+      // create svg element
+      var svgEl = document.createElementNS(NAMESPACE, "svg");
+      svgEl.setAttribute("viewBox", "0 0 24 24");
+      svgEl.setAttribute("class", "svg_icon icon_menu");
+      svgEl.setAttribute("role", "img");
+      // create svg title element
+      var titleEl = document.createElementNS(NAMESPACE, "title");
+      titleEl.textContent = BUTTON_TITLE;
+      svgEl.appendChild(titleEl);
+      // create svg path element
+      var pathEl = document.createElementNS(NAMESPACE, "path");
+      pathEl.setAttribute("class", "svg_main_color");
+      pathEl.setAttribute("d", "M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z");
+      svgEl.appendChild(pathEl);
+      return svgEl;
+  };
 
   // 決め打ちのid名やらclass名たち
   var 
@@ -24,7 +70,7 @@
   // 要素に付与してページに変化を起こすclass名
   STATE_OPENED = "is_opened", 
   // モーダル要素を表示させるclass名
-  STATE_VISIBLE = "is_visible", IS_EXIST_TOUCH_EVENT = window.ontouchstart === null, DEVICE_CLICK_EVENT_TYPE = (window.ontouchend === null) ? "touchend" : "click";
+  STATE_VISIBLE = "is_visible";
   var NavManagerError = function NavManagerError(message) {
       this.message = message;
       this.name = "NavManagerError";
@@ -297,6 +343,8 @@
               { return; }
           navManager.closeSlideNavMenu();
       }, false);
+      // スマホ版での追従ボタンを追加
+      appendFixedButton(navManager.openSlideNavMenu.bind(navManager));
       // resize時にスマホ版表示グローバルナビゲーションを閉じる処理を、
       // 負荷軽減させつつ行う
       //
