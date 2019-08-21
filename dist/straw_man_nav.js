@@ -3,7 +3,7 @@
  * See {@link https://github.com/dettalant/straw_man_nav}
  *
  * @author dettalant
- * @version v0.3.0
+ * @version v0.3.1
  * @license MIT License
  */
 (function () {
@@ -64,7 +64,7 @@
   // クリック可能要素class名
   NAV_CLIP_NAME = "global_nav_clip", 
   // クリックすると現れる要素class名
-  NAV_CLIP_WRAPPER_NAME = "global_nav_clip_wrapper", 
+  NAV_CLIP_WRAPPER_NAME = "global_nav_clip_wrapper", NAV_CLOSE_ELEMENT_NAME = "is_close_global_nav", NAV_CLIP_UNCLOSE_ELEMENT_NAME = "is_unclose_global_nav_clip", 
   // スマホ版グローバルナビゲーションを開閉するボタン
   NAV_OPENER_ID = "globalNavOpener", 
   // 要素に付与してページに変化を起こすclass名
@@ -94,6 +94,7 @@
       return InitializeError;
   }(NavManagerError));
   var NavManager = function NavManager() {
+      this.globalNavCloseElements = document.getElementsByClassName(NAV_CLOSE_ELEMENT_NAME);
       this.states = {
           isSwiping: false,
           scrollY: 0,
@@ -275,6 +276,21 @@
       return true;
   };
   /**
+   * クリックされた要素が「クリックするとグローバルナビゲーションを閉じる要素」だった場合
+   * trueを返す
+   *
+   * @param  e クリックイベントかタッチイベント
+   * @return   グローバルナビゲーションを閉じる要素をクリックしていたらtrue
+   */
+  NavManager.prototype.isCloseElementClick = function isCloseElementClick (e) {
+      var isClickCloseEl = false;
+      if (e.target instanceof HTMLElement
+          && e.target.className.indexOf(NAV_CLOSE_ELEMENT_NAME) !== -1) {
+          isClickCloseEl = true;
+      }
+      return isClickCloseEl;
+  };
+  /**
    * ふわっと辺りを暗くするモーダルシャドウのための要素を生成
    * @return 生成したモーダルシャドウElement
    */
@@ -324,9 +340,11 @@
       var navClipsLen = navManager.globalNavClips.length;
       var loop = function ( i ) {
           var clip = navManager.globalNavClips[i];
-          clip.addEventListener(DEVICE_CLICK_EVENT_TYPE, function () {
-              if (navManager.states.isSwiping)
-                  { return; }
+          clip.addEventListener(DEVICE_CLICK_EVENT_TYPE, function (e) {
+              if (navManager.states.isSwiping
+                  || e.target instanceof HTMLElement && e.target.className.indexOf(NAV_CLIP_UNCLOSE_ELEMENT_NAME) !== -1) {
+                  return;
+              }
               navManager.clickEventHandler(clip);
           }, false);
       };
@@ -338,11 +356,18 @@
               { return; }
           navManager.openSlideNavMenu();
       }, false);
-      navManager.modalShadow.addEventListener(DEVICE_CLICK_EVENT_TYPE, function () {
+      var closeSlideNavMenuHandler = function () {
           if (navManager.states.isSwiping)
               { return; }
           navManager.closeSlideNavMenu();
-      }, false);
+      };
+      navManager.modalShadow.addEventListener(DEVICE_CLICK_EVENT_TYPE, closeSlideNavMenuHandler, false);
+      // グローバルナビゲーションを閉じるクラス名が付与されている要素にもイベントをつけておく
+      var globalNavCloseElementsLen = navManager.globalNavCloseElements.length;
+      for (var i$1 = 0; i$1 < globalNavCloseElementsLen; i$1++) {
+          var el = navManager.globalNavCloseElements[i$1];
+          el.addEventListener(DEVICE_CLICK_EVENT_TYPE, closeSlideNavMenuHandler, false);
+      }
       // スマホ版での追従ボタンを追加
       appendFixedButton(navManager.openSlideNavMenu.bind(navManager));
       // resize時にスマホ版表示グローバルナビゲーションを閉じる処理を、

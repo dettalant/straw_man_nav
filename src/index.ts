@@ -11,6 +11,8 @@ const
   NAV_CLIP_NAME = "global_nav_clip",
   // クリックすると現れる要素class名
   NAV_CLIP_WRAPPER_NAME = "global_nav_clip_wrapper",
+  NAV_CLOSE_ELEMENT_NAME = "is_close_global_nav",
+  NAV_CLIP_UNCLOSE_ELEMENT_NAME = "is_unclose_global_nav_clip",
   // スマホ版グローバルナビゲーションを開閉するボタン
   NAV_OPENER_ID = "globalNavOpener",
   // 要素に付与してページに変化を起こすclass名
@@ -46,6 +48,7 @@ class NavManager {
   globalNavContainer: HTMLElement;
   globalNavClips: HTMLCollectionOf<Element>;
   globalNavOpener: HTMLElement;
+  globalNavCloseElements: HTMLCollectionOf<Element> = document.getElementsByClassName(NAV_CLOSE_ELEMENT_NAME);
   modalShadow: HTMLElement;
   states: NavManagerState = {
     isSwiping: false,
@@ -260,6 +263,25 @@ class NavManager {
   }
 
   /**
+   * クリックされた要素が「クリックするとグローバルナビゲーションを閉じる要素」だった場合
+   * trueを返す
+   *
+   * @param  e クリックイベントかタッチイベント
+   * @return   グローバルナビゲーションを閉じる要素をクリックしていたらtrue
+   */
+  isCloseElementClick(e: MouseEvent | TouchEvent): boolean {
+    let isClickCloseEl = false;
+
+    if (e.target instanceof HTMLElement
+      && e.target.className.indexOf(NAV_CLOSE_ELEMENT_NAME) !== -1
+    ) {
+      isClickCloseEl = true;
+    }
+
+    return isClickCloseEl;
+  }
+
+  /**
    * ふわっと辺りを暗くするモーダルシャドウのための要素を生成
    * @return 生成したモーダルシャドウElement
    */
@@ -314,8 +336,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const navClipsLen = navManager.globalNavClips.length;
   for (let i = 0; i < navClipsLen; i++) {
     let clip = navManager.globalNavClips[i]
-    clip.addEventListener(DEVICE_CLICK_EVENT_TYPE, () => {
-      if (navManager.states.isSwiping) return;
+    clip.addEventListener(DEVICE_CLICK_EVENT_TYPE, (e) => {
+      if (navManager.states.isSwiping
+        || e.target instanceof HTMLElement && e.target.className.indexOf(NAV_CLIP_UNCLOSE_ELEMENT_NAME) !== -1
+      ){
+        return;
+      }
 
       navManager.clickEventHandler(clip);
     }, false);
@@ -328,11 +354,20 @@ document.addEventListener("DOMContentLoaded", () => {
     navManager.openSlideNavMenu()
   }, false);
 
-  navManager.modalShadow.addEventListener(DEVICE_CLICK_EVENT_TYPE, () => {
+  const closeSlideNavMenuHandler = () => {
     if (navManager.states.isSwiping) return;
 
     navManager.closeSlideNavMenu();
-  }, false)
+  }
+
+  navManager.modalShadow.addEventListener(DEVICE_CLICK_EVENT_TYPE, closeSlideNavMenuHandler, false)
+
+  // グローバルナビゲーションを閉じるクラス名が付与されている要素にもイベントをつけておく
+  const globalNavCloseElementsLen = navManager.globalNavCloseElements.length;
+  for (let i = 0; i < globalNavCloseElementsLen; i++) {
+    const el = navManager.globalNavCloseElements[i];
+    el.addEventListener(DEVICE_CLICK_EVENT_TYPE, closeSlideNavMenuHandler, false);
+  }
 
   // スマホ版での追従ボタンを追加
   appendFixedButton(navManager.openSlideNavMenu.bind(navManager));
