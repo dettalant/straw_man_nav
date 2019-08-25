@@ -1,10 +1,12 @@
 {
   "name": "straw_man_nav",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "main": "straw_man_nav.js",
   "license": "MIT",
   "private": true,
   "scripts": {
+    "clean": "find ./dist -maxdepth 1 ! -path ./dist | xargs -r rm -r",
+    "prebuild": "yarn run clean",
     "build": "yarn run build:development && yarn run build:production",
     "build:development": "rollup -c",
     "build:production": "NODE_ENV=production rollup -c"

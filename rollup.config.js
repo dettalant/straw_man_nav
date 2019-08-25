@@ -39,12 +39,17 @@ if (process.env.NODE_ENV === "production") {
   plugins.push(uglify(uglifyArgs));
 }
 
+const camelize = (str) => {
+  const camelStrArray = str.split("_").map((str, idx) => (idx === 0) ? str : str.slice(0, 1).toUpperCase() + str.slice(1));
+  return camelStrArray.join("");
+}
+
 export default {
   input: "./src/index.ts",
   output: {
     file: fileName + ".js",
     format: "iife",
-    name: scriptArgs.name,
+    name: camelize(scriptArgs.name),
     banner: bannerComment,
   },
   plugins

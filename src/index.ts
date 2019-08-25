@@ -1,24 +1,4 @@
-import { appendFixedButton } from "./append_button";
 import { IS_EXIST_TOUCH_EVENT, DEVICE_CLICK_EVENT_TYPE } from "./constants"
-
-// 決め打ちのid名やらclass名たち
-const
-  // グローバルナビゲーションコンテナid名
-  NAV_CONTAINER_ID = "globalNavContainer",
-  // 親要素id名
-  NAV_ID = "globalNav",
-  // クリック可能要素class名
-  NAV_CLIP_NAME = "global_nav_clip",
-  // クリックすると現れる要素class名
-  NAV_CLIP_WRAPPER_NAME = "global_nav_clip_wrapper",
-  NAV_CLOSE_ELEMENT_NAME = "is_close_global_nav",
-  NAV_CLIP_UNCLOSE_ELEMENT_NAME = "is_unclose_global_nav_clip",
-  // スマホ版グローバルナビゲーションを開閉するボタン
-  NAV_OPENER_ID = "globalNavOpener",
-  // 要素に付与してページに変化を起こすclass名
-  STATE_OPENED = "is_opened",
-  // モーダル要素を表示させるclass名
-  STATE_VISIBLE = "is_visible";
 
 class NavManagerError implements Error {
   public name = "NavManagerError";
@@ -37,43 +17,70 @@ interface NavManagerState {
   scrollY: number;
 }
 
+interface NavManagerInitArgs {
+  navContainerId: string;
+  navId: string;
+  navClipClassName: string;
+  navClipWrapperClassName: string;
+  navCloseElClassName: string;
+  navClipUncloseElClassName: string;
+  navOpenerId: string;
+  stateOpened: string;
+  stateVisible: string;
+}
+
 /**
  * NavManager初期化時のエラー。主に必須HTMLElementを取得できなかった際の致命的エラーを扱う。
  * @param targetName [description]
  */
 class InitializeError extends NavManagerError {}
 
-class NavManager {
+export default class NavManager {
+  args: NavManagerInitArgs;
   globalNav: HTMLElement;
   globalNavContainer: HTMLElement;
   globalNavClips: HTMLCollectionOf<Element>;
   globalNavOpener: HTMLElement;
-  globalNavCloseElements: HTMLCollectionOf<Element> = document.getElementsByClassName(NAV_CLOSE_ELEMENT_NAME);
+  globalNavCloseElements: HTMLCollectionOf<Element>;
   modalShadow: HTMLElement;
   states: NavManagerState = {
     isSwiping: false,
     scrollY: 0,
   };
 
-  constructor() {
-    const globalNavContainer = document.getElementById(NAV_CONTAINER_ID);
+  constructor(initArgs?: NavManagerInitArgs) {
+    this.args = (initArgs) ? initArgs : {
+      navContainerId: "globalNavContainer",
+      navId: "globalNav",
+      navClipClassName: "global_nav_clip",
+      navClipWrapperClassName: "global_nav_clip_wrapper",
+      navCloseElClassName: "is_close_global_nav",
+      navClipUncloseElClassName: "is_unclose_global_nav_clip",
+      navOpenerId: "globalNavOpener",
+      stateOpened: "is_opened",
+      stateVisible: "is_visible",
+    }
+
+    this.globalNavCloseElements = document.getElementsByClassName(this.args.navCloseElClassName)
+
+    const globalNavContainer = document.getElementById(this.args.navContainerId);
     if (globalNavContainer === null) {
-      throw new InitializeError("#" + NAV_CONTAINER_ID + "の取得ができませんでした");
+      throw new InitializeError("#" + this.args.navContainerId + "の取得ができませんでした");
     }
 
-    const globalNav = document.getElementById(NAV_ID);
+    const globalNav = document.getElementById(this.args.navId);
     if (globalNav === null) {
-      throw new InitializeError("#" + NAV_ID + "の取得ができませんでした");
+      throw new InitializeError("#" + this.args.navId + "の取得ができませんでした");
     }
 
-    const globalNavClips = globalNav.getElementsByClassName(NAV_CLIP_NAME);
+    const globalNavClips = globalNav.getElementsByClassName(this.args.navClipClassName);
     if (globalNavClips === null) {
-      throw new InitializeError("." + NAV_CLIP_NAME + "の取得ができませんでした");
+      throw new InitializeError("." + this.args.navClipClassName + "の取得ができませんでした");
     }
 
-    const globalNavOpener = document.getElementById(NAV_OPENER_ID);
+    const globalNavOpener = document.getElementById(this.args.navOpenerId);
     if (globalNavOpener === null) {
-      throw new InitializeError("#" + NAV_OPENER_ID + "の取得ができませんでした");
+      throw new InitializeError("#" + this.args.navOpenerId + "の取得ができませんでした");
     }
 
     this.globalNav = globalNav;
@@ -97,8 +104,8 @@ class NavManager {
     // モーダルウィンドウ展開時はbodyのスクロールを止める
     this.pinBodyScroll();
 
-    this.globalNavContainer.classList.add(STATE_OPENED);
-    this.modalShadow.classList.add(STATE_VISIBLE);
+    this.globalNavContainer.classList.add(this.args.stateOpened);
+    this.modalShadow.classList.add(this.args.stateVisible);
   }
 
   /**
@@ -109,11 +116,11 @@ class NavManager {
     this.unpinBodyScroll();
 
     // 速度的な効果があるかは知らないけど、
-    // とりあえずクラス名にSTATE_OPENEDが入っているかどうかの判定をしておく
-    if (this.globalNavContainer.className.indexOf(STATE_OPENED) !== -1) {
-      this.globalNavContainer.classList.remove(STATE_OPENED);
+    // とりあえずクラス名にthis.args.stateOpenedが入っているかどうかの判定をしておく
+    if (this.globalNavContainer.className.indexOf(this.args.stateOpened) !== -1) {
+      this.globalNavContainer.classList.remove(this.args.stateOpened);
     }
-    this.modalShadow.classList.remove(STATE_VISIBLE);
+    this.modalShadow.classList.remove(this.args.stateVisible);
   }
 
   /**
@@ -141,7 +148,7 @@ class NavManager {
 
   /**
    * 単一のドロップダウンメニューを開く
-   * @param  el ドロップダウンのボタン要素。 see NAV_CLIP_NAME
+   * @param  el ドロップダウンのボタン要素。 see this.args.navClipClassName
    */
   openDropDownClip(el: Element) {
     // 一部スマホではel.scrollHeightで求めている値を取得できてないっぽいので
@@ -169,12 +176,12 @@ class NavManager {
       el.style.maxHeight = calcScrollHeight(el) + "px";
     }
 
-    el.classList.add(STATE_OPENED);
+    el.classList.add(this.args.stateOpened);
   }
 
   /**
    * 単一のドロップダウンメニューを閉じる
-   * @param  el ドロップダウンのボタン要素。 see NAV_CLIP_NAME
+   * @param  el ドロップダウンのボタン要素。 see this.args.navClipClassName
    */
   closeDropDownClip(el: Element) {
     if (el instanceof HTMLElement) {
@@ -182,14 +189,14 @@ class NavManager {
       el.style.maxHeight = "";
     }
 
-    el.classList.remove(STATE_OPENED);
+    el.classList.remove(this.args.stateOpened);
   }
 
   /**
    * 全てのドロップダウンメニューを問答無用で閉じる
    */
   closeDropDownClipAll() {
-    // 全ての`.global_nav_clip`要素のクラス名からSTATE_OPENEDの中身を消去
+    // 全ての`.global_nav_clip`要素のクラス名からthis.args.stateOpenedの中身を消去
     const navClipsLen = this.globalNavClips.length;
     for (let i = 0; i < navClipsLen; i++) {
       const clip = this.globalNavClips[i];
@@ -203,13 +210,13 @@ class NavManager {
    * @param  el クラス名変更対象とする要素
    */
   clickEventHandler(el: Element) {
-    if (el.className.indexOf(STATE_OPENED) !== -1) {
-      // クリックした要素のクラス名にSTATE_OPENED内容が存在する場合はメニューを閉じるだけ
+    if (el.className.indexOf(this.args.stateOpened) !== -1) {
+      // クリックした要素のクラス名にthis.args.stateOpened内容が存在する場合はメニューを閉じるだけ
       this.closeDropDownClip(el)
       return;
     }
 
-    // クリックした要素のクラス名にSTATE_OPENED内容が存在しなければ、
+    // クリックした要素のクラス名にthis.args.stateOpened内容が存在しなければ、
     // 全てのドロップダウンを閉じてから一つを開く
     this.closeDropDownClipAll();
 
@@ -273,7 +280,7 @@ class NavManager {
     let isClickCloseEl = false;
 
     if (e.target instanceof HTMLElement
-      && e.target.className.indexOf(NAV_CLOSE_ELEMENT_NAME) !== -1
+      && e.target.className.indexOf(this.args.navCloseElClassName) !== -1
     ) {
       isClickCloseEl = true;
     }
@@ -312,81 +319,60 @@ class NavManager {
       })
     }
   }
-}
 
-document.addEventListener("DOMContentLoaded", () => {
-  // NavManagerクラスの初期化
-  const navManager = new NavManager();
-
-  // 他要素をクリックした際の処理をイベント登録
-  document.addEventListener(DEVICE_CLICK_EVENT_TYPE, function(e) {
-    if (navManager.states.isSwiping) {
-      return;
-    }
-
-    const checkNames = [NAV_CLIP_NAME, NAV_CLIP_WRAPPER_NAME];
-    if (navManager.isOtherElementsClick(e, checkNames)) {
-      // ボタン以外をクリックした際の処理
-      // 全てのドロップダウンメニューを閉じる
-      navManager.closeDropDownClipAll();
-    }
-  }, false);
-
-  // グローバルナビゲーション内のリスト格納要素をクリックした際の処理をイベント登録
-  const navClipsLen = navManager.globalNavClips.length;
-  for (let i = 0; i < navClipsLen; i++) {
-    let clip = navManager.globalNavClips[i]
-    clip.addEventListener(DEVICE_CLICK_EVENT_TYPE, (e) => {
-      if (navManager.states.isSwiping
-        || e.target instanceof HTMLElement && e.target.className.indexOf(NAV_CLIP_UNCLOSE_ELEMENT_NAME) !== -1
-      ){
+  /**
+   * 外部から呼び出すことを想定している各種イベント登録関数
+   */
+  public registerNavEvents() {
+    // 他要素をクリックした際の処理をイベント登録
+    document.addEventListener(DEVICE_CLICK_EVENT_TYPE, (e) => {
+      if (this.states.isSwiping) {
         return;
       }
 
-      navManager.clickEventHandler(clip);
+      const checkNames = [this.args.navClipClassName, this.args.navClipWrapperClassName];
+      if (this.isOtherElementsClick(e, checkNames)) {
+        // ボタン以外をクリックした際の処理
+        // 全てのドロップダウンメニューを閉じる
+        this.closeDropDownClipAll();
+      }
     }, false);
+
+    // グローバルナビゲーション内のリスト格納要素をクリックした際の処理をイベント登録
+    const navClipsLen = this.globalNavClips.length;
+    for (let i = 0; i < navClipsLen; i++) {
+      let clip = this.globalNavClips[i]
+      clip.addEventListener(DEVICE_CLICK_EVENT_TYPE, (e) => {
+        if (this.states.isSwiping
+          || e.target instanceof HTMLElement && e.target.className.indexOf(this.args.navClipUncloseElClassName) !== -1
+        ){
+          return;
+        }
+
+        this.clickEventHandler(clip);
+      }, false);
+    }
+
+    // グローバルナビゲーション開閉ボタンをクリックした際の処理をイベント登録
+    this.globalNavOpener.addEventListener(DEVICE_CLICK_EVENT_TYPE, () => {
+      if (this.states.isSwiping) return;
+
+      this.openSlideNavMenu()
+    }, false);
+
+    const closeSlideNavMenuHandler = () => {
+      if (this.states.isSwiping) return;
+
+      this.closeSlideNavMenu();
+    }
+
+    this.modalShadow.addEventListener(DEVICE_CLICK_EVENT_TYPE, closeSlideNavMenuHandler, false)
+
+    // グローバルナビゲーションを閉じるクラス名が付与されている要素にもイベントをつけておく
+    const globalNavCloseElementsLen = this.globalNavCloseElements.length;
+    for (let i = 0; i < globalNavCloseElementsLen; i++) {
+      const el = this.globalNavCloseElements[i];
+      el.addEventListener(DEVICE_CLICK_EVENT_TYPE, closeSlideNavMenuHandler, false);
+    }
   }
-
-  // グローバルナビゲーション開閉ボタンをクリックした際の処理をイベント登録
-  navManager.globalNavOpener.addEventListener(DEVICE_CLICK_EVENT_TYPE, () => {
-    if (navManager.states.isSwiping) return;
-
-    navManager.openSlideNavMenu()
-  }, false);
-
-  const closeSlideNavMenuHandler = () => {
-    if (navManager.states.isSwiping) return;
-
-    navManager.closeSlideNavMenu();
-  }
-
-  navManager.modalShadow.addEventListener(DEVICE_CLICK_EVENT_TYPE, closeSlideNavMenuHandler, false)
-
-  // グローバルナビゲーションを閉じるクラス名が付与されている要素にもイベントをつけておく
-  const globalNavCloseElementsLen = navManager.globalNavCloseElements.length;
-  for (let i = 0; i < globalNavCloseElementsLen; i++) {
-    const el = navManager.globalNavCloseElements[i];
-    el.addEventListener(DEVICE_CLICK_EVENT_TYPE, closeSlideNavMenuHandler, false);
-  }
-
-  // スマホ版での追従ボタンを追加
-  appendFixedButton(navManager.openSlideNavMenu.bind(navManager));
-
-  // resize時にスマホ版表示グローバルナビゲーションを閉じる処理を、
-  // 負荷軽減させつつ行う
-  //
-  // NOTE: スマホ版で致命的な問題が発生することが発覚したので一旦コメントアウト
-  //
-  // let timeoutId: number = 0;
-  // window.addEventListener("resize", () => {
-  //   if (timeoutId) {
-  //     return;
-  //   }
-  //
-  //   timeoutId = window.setTimeout(() => {
-  //     timeoutId = 0;
-  //     navManager.closeSlideNavMenu();
-  //     navManager.closeDropDownClipAll();
-  //   }, 200)
-  // }, false)
-})
+}
