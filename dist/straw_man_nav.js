@@ -3,14 +3,11 @@
  * See {@link https://github.com/dettalant/straw_man_nav}
  *
  * @author dettalant
- * @version v0.4.0
+ * @version v0.4.1
  * @license MIT License
  */
 var strawManNav = (function () {
   'use strict';
-
-  var IS_EXIST_TOUCH_EVENT = window.ontouchstart === null;
-  var DEVICE_CLICK_EVENT_TYPE = (IS_EXIST_TOUCH_EVENT) ? "touchend" : "click";
 
   var NavManagerError = function NavManagerError(message) {
       this.message = message;
@@ -36,7 +33,6 @@ var strawManNav = (function () {
   }(NavManagerError));
   var NavManager = function NavManager(initArgs) {
       this.states = {
-          isSwiping: false,
           scrollY: 0,
       };
       this.args = (initArgs) ? initArgs : {
@@ -74,9 +70,6 @@ var strawManNav = (function () {
       this.modalShadow = this.createModalShadowElement();
       // インスタンス生成時にdocument.bodyへと追加
       document.body.appendChild(this.modalShadow);
-      if (IS_EXIST_TOUCH_EVENT) {
-          this.appendSwipeValidationEvent();
-      }
   };
   /**
    * スマホ版スライドグローバルナビゲーションを開く
@@ -252,39 +245,16 @@ var strawManNav = (function () {
       return modalEl;
   };
   /**
-   * swipe時にtouchendをキャンセルする処理のために、
-   * swipeを行っているかを判定するイベントを追加する
-   */
-  NavManager.prototype.appendSwipeValidationEvent = function appendSwipeValidationEvent () {
-          var this$1 = this;
-
-      // スマホ判定を一応行っておく
-      if (IS_EXIST_TOUCH_EVENT) {
-          // touchend指定時の、スワイプ判定追加記述
-          // NOTE: 若干やっつけ気味
-          window.addEventListener("touchstart", function () {
-              this$1.states.isSwiping = false;
-          });
-          window.addEventListener("touchmove", function () {
-              if (!this$1.states.isSwiping) {
-                  // 無意味な上書きは一応避ける
-                  this$1.states.isSwiping = true;
-              }
-          });
-      }
-  };
-  /**
    * 外部から呼び出すことを想定している各種イベント登録関数
    */
   NavManager.prototype.registerNavEvents = function registerNavEvents () {
           var this$1 = this;
 
       // 他要素をクリックした際の処理をイベント登録
-      document.addEventListener(DEVICE_CLICK_EVENT_TYPE, function (e) {
-          if (this$1.states.isSwiping) {
-              return;
-          }
-          var checkNames = [this$1.args.navClipClassName, this$1.args.navClipWrapperClassName];
+      document.addEventListener("click", function (e) {
+          var checkNames = [
+              this$1.args.navClipClassName, this$1.args.navClipWrapperClassName
+          ];
           if (this$1.isOtherElementsClick(e, checkNames)) {
               // ボタン以外をクリックした際の処理
               // 全てのドロップダウンメニューを閉じる
@@ -295,9 +265,8 @@ var strawManNav = (function () {
       var navClipsLen = this.globalNavClips.length;
       var loop = function ( i ) {
           var clip = this$1.globalNavClips[i];
-          clip.addEventListener(DEVICE_CLICK_EVENT_TYPE, function (e) {
-              if (this$1.states.isSwiping
-                  || e.target instanceof HTMLElement && e.target.className.indexOf(this$1.args.navClipUncloseElClassName) !== -1) {
+          clip.addEventListener("click", function (e) {
+              if (e.target instanceof HTMLElement && e.target.className.indexOf(this$1.args.navClipUncloseElClassName) !== -1) {
                   return;
               }
               this$1.clickEventHandler(clip);
@@ -306,22 +275,14 @@ var strawManNav = (function () {
 
           for (var i = 0; i < navClipsLen; i++) loop( i );
       // グローバルナビゲーション開閉ボタンをクリックした際の処理をイベント登録
-      this.globalNavOpener.addEventListener(DEVICE_CLICK_EVENT_TYPE, function () {
-          if (this$1.states.isSwiping)
-              { return; }
-          this$1.openSlideNavMenu();
-      }, false);
-      var closeSlideNavMenuHandler = function () {
-          if (this$1.states.isSwiping)
-              { return; }
-          this$1.closeSlideNavMenu();
-      };
-      this.modalShadow.addEventListener(DEVICE_CLICK_EVENT_TYPE, closeSlideNavMenuHandler, false);
+      this.globalNavOpener.addEventListener("click", function () { return this$1.openSlideNavMenu(); });
+      var closeSlideNavMenuHandler = function () { return this$1.closeSlideNavMenu(); };
+      this.modalShadow.addEventListener("click", closeSlideNavMenuHandler);
       // グローバルナビゲーションを閉じるクラス名が付与されている要素にもイベントをつけておく
       var globalNavCloseElementsLen = this.globalNavCloseElements.length;
       for (var i$1 = 0; i$1 < globalNavCloseElementsLen; i$1++) {
           var el = this.globalNavCloseElements[i$1];
-          el.addEventListener(DEVICE_CLICK_EVENT_TYPE, closeSlideNavMenuHandler, false);
+          el.addEventListener("click", closeSlideNavMenuHandler);
       }
   };
 

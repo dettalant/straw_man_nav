@@ -1,4 +1,4 @@
-import { IS_EXIST_TOUCH_EVENT, DEVICE_CLICK_EVENT_TYPE } from "./constants"
+import { NavManagerState, NavManagerInitArgs } from "./interfaces"
 
 class NavManagerError implements Error {
   public name = "NavManagerError";
@@ -8,25 +8,6 @@ class NavManagerError implements Error {
   toString() {
     return this.name + ": " + this.message;
   }
-}
-
-interface NavManagerState {
-  // スワイプ操作が行われた場合にはtrueとなる
-  isSwiping: boolean;
-  // モーダル展開時に一時保管するスクロール量
-  scrollY: number;
-}
-
-interface NavManagerInitArgs {
-  navContainerId: string;
-  navId: string;
-  navClipClassName: string;
-  navClipWrapperClassName: string;
-  navCloseElClassName: string;
-  navClipUncloseElClassName: string;
-  navOpenerId: string;
-  stateOpened: string;
-  stateVisible: string;
 }
 
 /**
@@ -44,7 +25,6 @@ export default class NavManager {
   globalNavCloseElements: HTMLCollectionOf<Element>;
   modalShadow: HTMLElement;
   states: NavManagerState = {
-    isSwiping: false,
     scrollY: 0,
   };
 
@@ -91,10 +71,6 @@ export default class NavManager {
 
     // インスタンス生成時にdocument.bodyへと追加
     document.body.appendChild(this.modalShadow);
-
-    if (IS_EXIST_TOUCH_EVENT) {
-      this.appendSwipeValidationEvent();
-    }
   }
 
   /**
@@ -299,38 +275,15 @@ export default class NavManager {
   }
 
   /**
-   * swipe時にtouchendをキャンセルする処理のために、
-   * swipeを行っているかを判定するイベントを追加する
-   */
-  appendSwipeValidationEvent() {
-    // スマホ判定を一応行っておく
-    if (IS_EXIST_TOUCH_EVENT) {
-      // touchend指定時の、スワイプ判定追加記述
-      // NOTE: 若干やっつけ気味
-      window.addEventListener("touchstart", () => {
-        this.states.isSwiping = false;
-      });
-
-      window.addEventListener("touchmove", () => {
-        if (!this.states.isSwiping) {
-          // 無意味な上書きは一応避ける
-          this.states.isSwiping = true;
-        }
-      })
-    }
-  }
-
-  /**
    * 外部から呼び出すことを想定している各種イベント登録関数
    */
   public registerNavEvents() {
     // 他要素をクリックした際の処理をイベント登録
-    document.addEventListener(DEVICE_CLICK_EVENT_TYPE, (e) => {
-      if (this.states.isSwiping) {
-        return;
-      }
+    document.addEventListener("click", (e) => {
 
-      const checkNames = [this.args.navClipClassName, this.args.navClipWrapperClassName];
+      const checkNames = [
+        this.args.navClipClassName, this.args.navClipWrapperClassName
+      ];
       if (this.isOtherElementsClick(e, checkNames)) {
         // ボタン以外をクリックした際の処理
         // 全てのドロップダウンメニューを閉じる
@@ -342,9 +295,8 @@ export default class NavManager {
     const navClipsLen = this.globalNavClips.length;
     for (let i = 0; i < navClipsLen; i++) {
       let clip = this.globalNavClips[i]
-      clip.addEventListener(DEVICE_CLICK_EVENT_TYPE, (e) => {
-        if (this.states.isSwiping
-          || e.target instanceof HTMLElement && e.target.className.indexOf(this.args.navClipUncloseElClassName) !== -1
+      clip.addEventListener("click", (e) => {
+        if (e.target instanceof HTMLElement && e.target.className.indexOf(this.args.navClipUncloseElClassName) !== -1
         ){
           return;
         }
@@ -354,25 +306,17 @@ export default class NavManager {
     }
 
     // グローバルナビゲーション開閉ボタンをクリックした際の処理をイベント登録
-    this.globalNavOpener.addEventListener(DEVICE_CLICK_EVENT_TYPE, () => {
-      if (this.states.isSwiping) return;
+    this.globalNavOpener.addEventListener("click", () => this.openSlideNavMenu());
 
-      this.openSlideNavMenu()
-    }, false);
+    const closeSlideNavMenuHandler = () => this.closeSlideNavMenu();
 
-    const closeSlideNavMenuHandler = () => {
-      if (this.states.isSwiping) return;
-
-      this.closeSlideNavMenu();
-    }
-
-    this.modalShadow.addEventListener(DEVICE_CLICK_EVENT_TYPE, closeSlideNavMenuHandler, false)
+    this.modalShadow.addEventListener("click", closeSlideNavMenuHandler)
 
     // グローバルナビゲーションを閉じるクラス名が付与されている要素にもイベントをつけておく
     const globalNavCloseElementsLen = this.globalNavCloseElements.length;
     for (let i = 0; i < globalNavCloseElementsLen; i++) {
       const el = this.globalNavCloseElements[i];
-      el.addEventListener(DEVICE_CLICK_EVENT_TYPE, closeSlideNavMenuHandler, false);
+      el.addEventListener("click", closeSlideNavMenuHandler);
     }
   }
 }
